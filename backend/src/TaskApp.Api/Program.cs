@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TaskApp.Application;
 using TaskApp.Infrastructure;
 using TaskApp.Infrastructure.Persistence;
@@ -6,7 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums as strings on the wire (e.g. "Medium" instead of 1) — readable request
+    // bodies and consistent with how TaskDto already renders Priority as text.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();

@@ -41,4 +41,15 @@ public class TaskRepository : ITaskRepository
     }
 
     #endregion
+
+    #region Commands
+
+    /// <inheritdoc />
+    public async Task AddAsync(TaskItem task, CancellationToken cancellationToken)
+    {
+        await _context.Tasks.AddAsync(task, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    #endregion
 }

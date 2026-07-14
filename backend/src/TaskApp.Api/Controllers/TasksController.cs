@@ -48,5 +48,35 @@ public class TasksController : ControllerBase
         return Ok(tasks);
     }
 
+    /// <summary>
+    /// Creates a new task.
+    /// </summary>
+    /// <param name="request">Title and priority of the task to create.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation if the client disconnects.</param>
+    /// <returns>201 with the created task, or 400 with validation errors.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(TaskDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<TaskDto>> CreateTask(
+        [FromBody] CreateTaskDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _taskService.CreateTaskAsync(request, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error);
+            }
+
+            return ValidationProblem(ModelState);
+        }
+
+        // No dedicated GET-by-id endpoint exists yet (optional per spec), so the
+        // Location header points at the conventional resource URI rather than a live route.
+        return Created($"/api/tasks/{result.Value!.Id}", result.Value);
+    }
+
     #endregion
 }

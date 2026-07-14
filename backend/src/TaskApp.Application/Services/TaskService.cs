@@ -1,7 +1,10 @@
+using FluentValidation;
+using TaskApp.Application.Common;
 using TaskApp.Application.DTOs;
 using TaskApp.Application.Enums;
 using TaskApp.Application.Interfaces;
 using TaskApp.Application.Mapping;
+using TaskApp.Domain.Entities;
 
 namespace TaskApp.Application.Services;
 
@@ -14,16 +17,19 @@ public class TaskService
     #region Fields
 
     private readonly ITaskRepository _repository;
+    private readonly IValidator<CreateTaskDto> _createTaskValidator;
 
     #endregion
 
     #region Constructor
 
-    /// <summary>Creates the service with its repository dependency, injected via DI.</summary>
+    /// <summary>Creates the service with its dependencies, injected via DI.</summary>
     /// <param name="repository">Abstraction over task persistence.</param>
-    public TaskService(ITaskRepository repository)
+    /// <param name="createTaskValidator">Validates task creation requests.</param>
+    public TaskService(ITaskRepository repository, IValidator<CreateTaskDto> createTaskValidator)
     {
         _repository = repository;
+        _createTaskValidator = createTaskValidator;
     }
 
     #endregion
@@ -50,6 +56,37 @@ public class TaskService
         };
 
         return filtered.Select(t => t.ToDto()).ToList();
+    }
+
+    #endregion
+
+    #region Commands
+
+    /// <summary>
+    /// Validates and creates a new task. The repository is only called when validation
+    /// passes — on failure this returns the validation errors without touching persistence.
+    /// </summary>
+    /// <param name="request">The task to create.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    public async Task<ServiceResult<TaskDto>> CreateTaskAsync(CreateTaskDto request, CancellationToken cancellationToken)
+    {
+        var validationResult = await _createTaskValidator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return ServiceResult<TaskDto>.Failure(validationResult.Errors.Select(e => e.ErrorMessage));
+        }
+
+        var task = new TaskItem
+        {
+            Title = request.Title,
+            Priority = request.Priority,
+            IsCompleted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _repository.AddAsync(task, cancellationToken);
+
+        return ServiceResult<TaskDto>.Success(task.ToDto());
     }
 
     #endregion
