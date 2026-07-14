@@ -20,4 +20,14 @@ public interface ITaskRepository
     /// <param name="task">The task to persist.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task AddAsync(TaskItem task, CancellationToken cancellationToken);
+
+    /// <summary>Returns a single task by id, or null if it doesn't exist.</summary>
+    /// <param name="id">Id of the task to fetch.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    Task<TaskItem?> GetByIdAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>Persists changes made to an existing task.</summary>
+    /// <param name="task">The task to update.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    Task UpdateAsync(TaskItem task, CancellationToken cancellationToken);
 }

@@ -73,7 +73,7 @@ public class TaskService
         var validationResult = await _createTaskValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return ServiceResult<TaskDto>.Failure(validationResult.Errors.Select(e => e.ErrorMessage));
+            return ServiceResult<TaskDto>.ValidationFailure(validationResult.Errors.Select(e => e.ErrorMessage));
         }
 
         var task = new TaskItem
@@ -85,6 +85,28 @@ public class TaskService
         };
 
         await _repository.AddAsync(task, cancellationToken);
+
+        return ServiceResult<TaskDto>.Success(task.ToDto());
+    }
+
+    /// <summary>
+    /// Flips a task's completed status. Sets <c>CompletedAt</c> when marking it done,
+    /// clears it when reopening it.
+    /// </summary>
+    /// <param name="id">Id of the task to toggle.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    public async Task<ServiceResult<TaskDto>> ToggleTaskStatusAsync(int id, CancellationToken cancellationToken)
+    {
+        var task = await _repository.GetByIdAsync(id, cancellationToken);
+        if (task is null)
+        {
+            return ServiceResult<TaskDto>.NotFound($"Task {id} was not found.");
+        }
+
+        task.IsCompleted = !task.IsCompleted;
+        task.CompletedAt = task.IsCompleted ? DateTime.UtcNow : null;
+
+        await _repository.UpdateAsync(task, cancellationToken);
 
         return ServiceResult<TaskDto>.Success(task.ToDto());
     }

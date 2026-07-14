@@ -1,4 +1,5 @@
 using Moq;
+using TaskApp.Application.Common;
 using TaskApp.Application.DTOs;
 using TaskApp.Application.Interfaces;
 using TaskApp.Application.Services;
@@ -83,6 +84,66 @@ public class TaskServiceTests
         Assert.False(result.IsSuccess);
         Assert.NotEmpty(result.Errors);
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    #endregion
+
+    #region ToggleTaskStatusAsync
+
+    [Fact]
+    public async Task ToggleStatus_WhenTaskExists_FlipsIsCompletedAndSetsCompletedAt()
+    {
+        // Arrange
+        var task = new TaskItem
+        {
+            Id = 7,
+            Title = "Water the plants",
+            Priority = TaskPriority.Low,
+            IsCompleted = false,
+            CompletedAt = null
+        };
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act: toggle once (active -> completed)
+        var completedResult = await _sut.ToggleTaskStatusAsync(7, CancellationToken.None);
+
+        // Assert
+        Assert.True(completedResult.IsSuccess);
+        Assert.True(completedResult.Value!.IsCompleted);
+        Assert.NotNull(completedResult.Value.CompletedAt);
+        Assert.InRange(completedResult.Value.CompletedAt!.Value, DateTime.UtcNow.AddSeconds(-5), DateTime.UtcNow);
+
+        // Act: toggle again (completed -> active)
+        var reopenedResult = await _sut.ToggleTaskStatusAsync(7, CancellationToken.None);
+
+        // Assert
+        Assert.True(reopenedResult.IsSuccess);
+        Assert.False(reopenedResult.Value!.IsCompleted);
+        Assert.Null(reopenedResult.Value.CompletedAt);
+
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task ToggleStatus_WhenTaskDoesNotExist_ReturnsNotFound()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskItem?)null);
+
+        // Act
+        var result = await _sut.ToggleTaskStatusAsync(999, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceResultErrorType.NotFound, result.ErrorType);
+        _repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion

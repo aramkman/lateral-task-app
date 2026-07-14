@@ -40,6 +40,14 @@ public class TaskRepository : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<TaskItem?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        // No AsNoTracking here: callers that fetch by id intend to mutate and save
+        // the entity (e.g. toggling status), so it needs to stay tracked.
+        return await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+    }
+
     #endregion
 
     #region Commands
@@ -48,6 +56,13 @@ public class TaskRepository : ITaskRepository
     public async Task AddAsync(TaskItem task, CancellationToken cancellationToken)
     {
         await _context.Tasks.AddAsync(task, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateAsync(TaskItem task, CancellationToken cancellationToken)
+    {
+        _context.Tasks.Update(task);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

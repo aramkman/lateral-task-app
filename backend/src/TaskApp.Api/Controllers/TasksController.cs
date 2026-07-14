@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TaskApp.Application.Common;
 using TaskApp.Application.DTOs;
 using TaskApp.Application.Enums;
 using TaskApp.Application.Services;
@@ -76,6 +77,27 @@ public class TasksController : ControllerBase
         // No dedicated GET-by-id endpoint exists yet (optional per spec), so the
         // Location header points at the conventional resource URI rather than a live route.
         return Created($"/api/tasks/{result.Value!.Id}", result.Value);
+    }
+
+    /// <summary>
+    /// Toggles a task's completed status.
+    /// </summary>
+    /// <param name="id">Id of the task to toggle.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation if the client disconnects.</param>
+    /// <returns>200 with the updated task, or 404 if it doesn't exist.</returns>
+    [HttpPatch("{id}/toggle")]
+    [ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskDto>> ToggleTaskStatus(int id, CancellationToken cancellationToken)
+    {
+        var result = await _taskService.ToggleTaskStatusAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Problem(title: result.Errors[0], statusCode: StatusCodes.Status404NotFound);
+        }
+
+        return Ok(result.Value);
     }
 
     #endregion

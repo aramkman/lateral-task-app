@@ -1,6 +1,22 @@
 namespace TaskApp.Application.Common;
 
 /// <summary>
+/// Categorizes why a <see cref="ServiceResult{T}"/> failed, so callers (controllers)
+/// can map it to the right HTTP status without string-matching error messages.
+/// </summary>
+public enum ServiceResultErrorType
+{
+    /// <summary>No failure — the result is successful.</summary>
+    None,
+
+    /// <summary>Input failed validation (maps to 400).</summary>
+    Validation,
+
+    /// <summary>The requested resource does not exist (maps to 404).</summary>
+    NotFound
+}
+
+/// <summary>
 /// Lightweight outcome wrapper for Application-layer operations that can fail
 /// (validation, not-found). Lets services signal failure without throwing
 /// exceptions for expected, common outcomes — a full Result library (e.g.
@@ -20,15 +36,19 @@ public class ServiceResult<T>
     /// <summary>Human-readable failure reasons, empty when <see cref="IsSuccess"/> is true.</summary>
     public IReadOnlyList<string> Errors { get; }
 
+    /// <summary>Why the operation failed, used to pick the right HTTP status. <see cref="ServiceResultErrorType.None"/> on success.</summary>
+    public ServiceResultErrorType ErrorType { get; }
+
     #endregion
 
     #region Constructor
 
-    private ServiceResult(bool isSuccess, T? value, IReadOnlyList<string> errors)
+    private ServiceResult(bool isSuccess, T? value, IReadOnlyList<string> errors, ServiceResultErrorType errorType)
     {
         IsSuccess = isSuccess;
         Value = value;
         Errors = errors;
+        ErrorType = errorType;
     }
 
     #endregion
@@ -36,10 +56,16 @@ public class ServiceResult<T>
     #region Factories
 
     /// <summary>Creates a successful result carrying <paramref name="value"/>.</summary>
-    public static ServiceResult<T> Success(T value) => new(true, value, Array.Empty<string>());
+    public static ServiceResult<T> Success(T value) =>
+        new(true, value, Array.Empty<string>(), ServiceResultErrorType.None);
 
-    /// <summary>Creates a failed result carrying the given <paramref name="errors"/>.</summary>
-    public static ServiceResult<T> Failure(IEnumerable<string> errors) => new(false, default, errors.ToList());
+    /// <summary>Creates a failed result for invalid input, carrying the given <paramref name="errors"/>.</summary>
+    public static ServiceResult<T> ValidationFailure(IEnumerable<string> errors) =>
+        new(false, default, errors.ToList(), ServiceResultErrorType.Validation);
+
+    /// <summary>Creates a failed result for a missing resource.</summary>
+    public static ServiceResult<T> NotFound(string error) =>
+        new(false, default, new[] { error }, ServiceResultErrorType.NotFound);
 
     #endregion
 }
