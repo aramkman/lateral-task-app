@@ -48,3 +48,6 @@ Thumbs.db
 design-reference/
 Lateral_TaskApp_Spec.md
 Lateral_TaskApp_TestPlan.md
+
+## AI tooling config (not part of the deliverable repo) ##
+.claude/
