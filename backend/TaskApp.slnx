@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TaskApp.Api/TaskApp.Api.csproj" />
+    <Project Path="src/TaskApp.Application/TaskApp.Application.csproj" />
+    <Project Path="src/TaskApp.Domain/TaskApp.Domain.csproj" />
+    <Project Path="src/TaskApp.Infrastructure/TaskApp.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TaskApp.Tests/TaskApp.Tests.csproj" />
+  </Folder>
+</Solution>
