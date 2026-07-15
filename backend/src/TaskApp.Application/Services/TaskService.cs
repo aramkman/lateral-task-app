@@ -111,5 +111,23 @@ public class TaskService
         return ServiceResult<TaskDto>.Success(task.ToDto());
     }
 
+    /// <summary>
+    /// Deletes a task.
+    /// </summary>
+    /// <param name="id">Id of the task to delete.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    public async Task<ServiceResult> DeleteTaskAsync(int id, CancellationToken cancellationToken)
+    {
+        var task = await _repository.GetByIdAsync(id, cancellationToken);
+        if (task is null)
+        {
+            return ServiceResult.NotFound($"Task {id} was not found.");
+        }
+
+        await _repository.DeleteAsync(task, cancellationToken);
+
+        return ServiceResult.Success();
+    }
+
     #endregion
 }

@@ -66,5 +66,12 @@ public class TaskRepository : ITaskRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task DeleteAsync(TaskItem task, CancellationToken cancellationToken)
+    {
+        _context.Tasks.Remove(task);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     #endregion
 }

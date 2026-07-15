@@ -30,4 +30,9 @@ public interface ITaskRepository
     /// <param name="task">The task to update.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task UpdateAsync(TaskItem task, CancellationToken cancellationToken);
+
+    /// <summary>Removes an existing task from the store.</summary>
+    /// <param name="task">The task to remove.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    Task DeleteAsync(TaskItem task, CancellationToken cancellationToken);
 }

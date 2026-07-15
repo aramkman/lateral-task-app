@@ -147,4 +147,45 @@ public class TaskServiceTests
     }
 
     #endregion
+
+    #region DeleteTaskAsync
+
+    [Fact]
+    public async Task DeleteTask_WhenTaskExists_RemovesTask()
+    {
+        // Arrange
+        var task = new TaskItem { Id = 3, Title = "Water the plants", Priority = TaskPriority.Low };
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _repositoryMock
+            .Setup(r => r.DeleteAsync(task, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DeleteTaskAsync(3, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        _repositoryMock.Verify(r => r.DeleteAsync(task, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteTask_WhenTaskDoesNotExist_ReturnsNotFound()
+    {
+        // Arrange
+        _repositoryMock
+            .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskItem?)null);
+
+        // Act
+        var result = await _sut.DeleteTaskAsync(999, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceResultErrorType.NotFound, result.ErrorType);
+        _repositoryMock.Verify(r => r.DeleteAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    #endregion
 }

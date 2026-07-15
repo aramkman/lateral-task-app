@@ -100,5 +100,26 @@ public class TasksController : ControllerBase
         return Ok(result.Value);
     }
 
+    /// <summary>
+    /// Deletes a task.
+    /// </summary>
+    /// <param name="id">Id of the task to delete.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation if the client disconnects.</param>
+    /// <returns>204 if deleted, or 404 if it doesn't exist.</returns>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTask(int id, CancellationToken cancellationToken)
+    {
+        var result = await _taskService.DeleteTaskAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Problem(title: result.Errors[0], statusCode: StatusCodes.Status404NotFound);
+        }
+
+        return NoContent();
+    }
+
     #endregion
 }

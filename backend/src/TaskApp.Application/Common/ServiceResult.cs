@@ -69,3 +69,44 @@ public class ServiceResult<T>
 
     #endregion
 }
+
+/// <summary>
+/// Non-generic counterpart to <see cref="ServiceResult{T}"/>, for operations that
+/// don't return a value on success (e.g. delete, which maps to 204 No Content).
+/// </summary>
+public class ServiceResult
+{
+    #region Properties
+
+    /// <summary>Whether the operation succeeded.</summary>
+    public bool IsSuccess { get; }
+
+    /// <summary>Human-readable failure reasons, empty when <see cref="IsSuccess"/> is true.</summary>
+    public IReadOnlyList<string> Errors { get; }
+
+    /// <summary>Why the operation failed, used to pick the right HTTP status. <see cref="ServiceResultErrorType.None"/> on success.</summary>
+    public ServiceResultErrorType ErrorType { get; }
+
+    #endregion
+
+    #region Constructor
+
+    private ServiceResult(bool isSuccess, IReadOnlyList<string> errors, ServiceResultErrorType errorType)
+    {
+        IsSuccess = isSuccess;
+        Errors = errors;
+        ErrorType = errorType;
+    }
+
+    #endregion
+
+    #region Factories
+
+    /// <summary>Creates a successful result.</summary>
+    public static ServiceResult Success() => new(true, Array.Empty<string>(), ServiceResultErrorType.None);
+
+    /// <summary>Creates a failed result for a missing resource.</summary>
+    public static ServiceResult NotFound(string error) => new(false, new[] { error }, ServiceResultErrorType.NotFound);
+
+    #endregion
+}
