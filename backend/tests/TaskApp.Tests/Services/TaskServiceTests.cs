@@ -1,6 +1,7 @@
 using Moq;
 using TaskApp.Application.Common;
 using TaskApp.Application.DTOs;
+using TaskApp.Application.Enums;
 using TaskApp.Application.Interfaces;
 using TaskApp.Application.Services;
 using TaskApp.Application.Validators;
@@ -24,6 +25,39 @@ public class TaskServiceTests
     public TaskServiceTests()
     {
         _sut = new TaskService(_repositoryMock.Object, new CreateTaskDtoValidator());
+    }
+
+    #endregion
+
+    #region GetTasksAsync
+
+    [Fact]
+    public async Task GetTasks_WithStatusFilter_ReturnsOnlyMatchingTasks()
+    {
+        // Arrange: a mixed set of active and completed tasks in the mocked repository.
+        var tasks = new List<TaskItem>
+        {
+            new() { Id = 1, Title = "Active task A", Priority = TaskPriority.Low, IsCompleted = false },
+            new() { Id = 2, Title = "Active task B", Priority = TaskPriority.Medium, IsCompleted = false },
+            new() { Id = 3, Title = "Completed task", Priority = TaskPriority.High, IsCompleted = true }
+        };
+        _repositoryMock
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tasks);
+
+        // Act & Assert: all
+        var all = await _sut.GetTasksAsync(TaskStatusFilter.All, CancellationToken.None);
+        Assert.Equal(3, all.Count);
+
+        // Act & Assert: active
+        var active = await _sut.GetTasksAsync(TaskStatusFilter.Active, CancellationToken.None);
+        Assert.Equal(2, active.Count);
+        Assert.All(active, t => Assert.False(t.IsCompleted));
+
+        // Act & Assert: completed
+        var completed = await _sut.GetTasksAsync(TaskStatusFilter.Completed, CancellationToken.None);
+        Assert.Single(completed);
+        Assert.True(completed[0].IsCompleted);
     }
 
     #endregion
