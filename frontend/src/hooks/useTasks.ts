@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { deleteTask, getTasks, toggleTaskStatus } from '../api/tasksApi'
-import type { Task, TaskStatusFilter } from '../types/task'
+import { createTask, deleteTask, getTasks, toggleTaskStatus } from '../api/tasksApi'
+import type { Task, TaskPriority, TaskStatusFilter } from '../types/task'
 
 interface UseTasksResult {
   tasks: Task[]
@@ -8,6 +8,7 @@ interface UseTasksResult {
   error: string | null
   filter: TaskStatusFilter
   setFilter: (filter: TaskStatusFilter) => void
+  addTask: (title: string, priority: TaskPriority) => Promise<void>
   toggleTask: (id: number) => Promise<void>
   removeTask: (id: number) => Promise<void>
 }
@@ -44,6 +45,15 @@ export function useTasks(): UseTasksResult {
     return () => controller.abort()
   }, [filter])
 
+  const addTask = useCallback(async (title: string, priority: TaskPriority) => {
+    try {
+      const created = await createTask(title, priority)
+      setTasks((current) => [...current, created])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create the task.')
+    }
+  }, [])
+
   // Update local state directly from the response instead of refetching the
   // whole list — fewer round trips, and the list doesn't flicker on toggle.
   const toggleTask = useCallback(async (id: number) => {
@@ -64,5 +74,5 @@ export function useTasks(): UseTasksResult {
     }
   }, [])
 
-  return { tasks, isLoading, error, filter, setFilter, toggleTask, removeTask }
+  return { tasks, isLoading, error, filter, setFilter, addTask, toggleTask, removeTask }
 }

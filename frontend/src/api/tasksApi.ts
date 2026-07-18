@@ -1,4 +1,4 @@
-import type { Task, TaskStatusFilter } from '../types/task'
+import type { Task, TaskPriority, TaskStatusFilter } from '../types/task'
 
 // Backend's default dev port (see backend/src/TaskApp.Api/Properties/launchSettings.json).
 // Adjust here if the API runs elsewhere.
@@ -12,6 +12,18 @@ async function throwIfNotOk(response: Response): Promise<void> {
   if (response.ok) return
   const problem = await response.json().catch(() => null)
   throw new Error(problem?.title ?? `Request failed with status ${response.status}`)
+}
+
+/** Creates a task and returns it as persisted (with its assigned id and timestamps). */
+export async function createTask(title: string, priority: TaskPriority, signal?: AbortSignal): Promise<Task> {
+  const response = await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, priority }),
+    signal,
+  })
+  await throwIfNotOk(response)
+  return response.json() as Promise<Task>
 }
 
 /** Fetches tasks, optionally filtered by status. */
