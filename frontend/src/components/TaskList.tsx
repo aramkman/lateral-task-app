@@ -1,19 +1,25 @@
-import type { Task } from '../types/task'
+import type { Task, TaskStatusFilter } from '../types/task'
 import { TaskItem } from './TaskItem'
+import { StatusCard } from './StatusCard'
 
 interface TaskListProps {
   tasks: Task[]
+  filter: TaskStatusFilter
   onToggle: (id: number) => void
   onDelete: (id: number) => void
 }
 
-/**
- * Renders the task list as a bordered card. The empty case here is a plain
- * message — the polished empty state (icon, per-filter copy) is TASK-13.
- */
-export function TaskList({ tasks, onToggle, onDelete }: TaskListProps) {
+const EMPTY_STATE_COPY: Record<TaskStatusFilter, { title: string; subtitle: string }> = {
+  All: { title: 'No tasks yet', subtitle: 'Add your first task above to get started.' },
+  Active: { title: 'All caught up', subtitle: 'You have no active tasks.' },
+  Completed: { title: 'Nothing completed', subtitle: 'Completed tasks will show up here.' },
+}
+
+/** Renders the task list as a bordered card, or a per-filter empty state when there's nothing to show. */
+export function TaskList({ tasks, filter, onToggle, onDelete }: TaskListProps) {
   if (tasks.length === 0) {
-    return <p className="px-6 py-[72px] text-center text-[15px] text-[#86868B]">No tasks to show.</p>
+    const copy = EMPTY_STATE_COPY[filter]
+    return <StatusCard icon="☰" title={copy.title} subtitle={copy.subtitle} />
   }
 
   return (

@@ -5,6 +5,20 @@ import type { Task, TaskPriority, TaskStatusFilter } from '../types/task'
 const API_BASE_URL = 'http://localhost:5211/api/tasks'
 
 /**
+ * Runs `fetch`, replacing the browser's raw network-failure message (e.g.
+ * "Failed to fetch") with user-facing copy. Deliberate aborts (component
+ * unmount) still throw an AbortError — callers already check the signal
+ * before showing anything, so rewording it here is harmless.
+ */
+async function safeFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init)
+  } catch {
+    throw new Error('Could not reach the server. Check your connection and try again.')
+  }
+}
+
+/**
  * Throws with a message taken from the API's ProblemDetails body when the
  * response isn't ok, falling back to a generic message if the body isn't JSON.
  */
@@ -16,7 +30,7 @@ async function throwIfNotOk(response: Response): Promise<void> {
 
 /** Creates a task and returns it as persisted (with its assigned id and timestamps). */
 export async function createTask(title: string, priority: TaskPriority, signal?: AbortSignal): Promise<Task> {
-  const response = await fetch(API_BASE_URL, {
+  const response = await safeFetch(API_BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, priority }),
@@ -28,20 +42,20 @@ export async function createTask(title: string, priority: TaskPriority, signal?:
 
 /** Fetches tasks, optionally filtered by status. */
 export async function getTasks(filter: TaskStatusFilter, signal?: AbortSignal): Promise<Task[]> {
-  const response = await fetch(`${API_BASE_URL}?status=${filter}`, { signal })
+  const response = await safeFetch(`${API_BASE_URL}?status=${filter}`, { signal })
   await throwIfNotOk(response)
   return response.json() as Promise<Task[]>
 }
 
 /** Toggles a task's completed status and returns the updated task. */
 export async function toggleTaskStatus(id: number, signal?: AbortSignal): Promise<Task> {
-  const response = await fetch(`${API_BASE_URL}/${id}/toggle`, { method: 'PATCH', signal })
+  const response = await safeFetch(`${API_BASE_URL}/${id}/toggle`, { method: 'PATCH', signal })
   await throwIfNotOk(response)
   return response.json() as Promise<Task>
 }
 
 /** Deletes a task. */
 export async function deleteTask(id: number, signal?: AbortSignal): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE', signal })
+  const response = await safeFetch(`${API_BASE_URL}/${id}`, { method: 'DELETE', signal })
   await throwIfNotOk(response)
 }

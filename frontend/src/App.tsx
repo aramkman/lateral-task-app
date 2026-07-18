@@ -2,6 +2,7 @@ import { useTasks } from './hooks/useTasks'
 import { AddTaskForm } from './components/AddTaskForm'
 import { TaskFilter } from './components/TaskFilter'
 import { TaskList } from './components/TaskList'
+import { StatusCard } from './components/StatusCard'
 
 function App() {
   const { tasks, remainingCount, isLoading, error, filter, setFilter, addTask, toggleTask, removeTask } = useTasks()
@@ -20,9 +21,15 @@ function App() {
 
         <TaskFilter value={filter} onChange={setFilter} />
 
-        {isLoading && <p className="text-center text-[15px] text-[#86868B]">Loading…</p>}
-        {error && <p className="text-center text-[15px] text-[#FF3B30]">{error}</p>}
-        {!isLoading && !error && <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />}
+        {isLoading && (
+          <div className="flex justify-center py-18">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E5E4E7] border-t-[#0071E3]" />
+          </div>
+        )}
+        {!isLoading && error && <StatusCard icon="⚠" title="Something went wrong" subtitle={error} />}
+        {!isLoading && !error && (
+          <TaskList tasks={tasks} filter={filter} onToggle={toggleTask} onDelete={removeTask} />
+        )}
       </div>
     </div>
   )
