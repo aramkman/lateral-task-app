@@ -29,18 +29,23 @@ async function throwIfNotOk(response: Response): Promise<void> {
 }
 
 /** Creates a task and returns it as persisted (with its assigned id and timestamps). */
-export async function createTask(title: string, priority: TaskPriority, signal?: AbortSignal): Promise<Task> {
+export async function createTask(title: string, priority: TaskPriority): Promise<Task> {
   const response = await safeFetch(API_BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, priority }),
-    signal,
   })
   await throwIfNotOk(response)
   return response.json() as Promise<Task>
 }
 
-/** Fetches tasks, optionally filtered by status. */
+/**
+ * Fetches tasks, optionally filtered by status. Takes an AbortSignal (unlike
+ * the mutations below) because it's called from an effect on mount: under
+ * React StrictMode's dev-only double-invoke, the first invocation's request
+ * needs to be cancellable so it doesn't call setState after that first,
+ * synthetic cleanup runs.
+ */
 export async function getTasks(filter: TaskStatusFilter, signal?: AbortSignal): Promise<Task[]> {
   const response = await safeFetch(`${API_BASE_URL}?status=${filter}`, { signal })
   await throwIfNotOk(response)
@@ -48,14 +53,14 @@ export async function getTasks(filter: TaskStatusFilter, signal?: AbortSignal): 
 }
 
 /** Toggles a task's completed status and returns the updated task. */
-export async function toggleTaskStatus(id: number, signal?: AbortSignal): Promise<Task> {
-  const response = await safeFetch(`${API_BASE_URL}/${id}/toggle`, { method: 'PATCH', signal })
+export async function toggleTaskStatus(id: number): Promise<Task> {
+  const response = await safeFetch(`${API_BASE_URL}/${id}/toggle`, { method: 'PATCH' })
   await throwIfNotOk(response)
   return response.json() as Promise<Task>
 }
 
 /** Deletes a task. */
-export async function deleteTask(id: number, signal?: AbortSignal): Promise<void> {
-  const response = await safeFetch(`${API_BASE_URL}/${id}`, { method: 'DELETE', signal })
+export async function deleteTask(id: number): Promise<void> {
+  const response = await safeFetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' })
   await throwIfNotOk(response)
 }
